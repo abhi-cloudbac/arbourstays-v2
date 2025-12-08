@@ -2,8 +2,9 @@ import HeroSectionWithSearchForm1 from '@/components/hero-sections/HeroSectionWi
 import { StaySearchForm } from '@/components/HeroSearchForm/StaySearchForm'
 import ListingFilterTabs from '@/components/ListingFilterTabs'
 import StayCard2 from '@/components/StayCard2'
-import { getStayCategoryByHandle } from '@/data/categories'
-import { getStayListingFilterOptions, getStayListings } from '@/data/listings'
+import { getCategoryBySlug, getListings } from '@/lib/payload-api'
+import { transformCategory, transformListingsToStayListings } from '@/lib/data-transformers'
+import { getStayListingFilterOptions } from '@/data/listings'
 import { Button } from '@/shared/Button'
 import { Divider } from '@/shared/divider'
 import Pagination from '@/shared/Pagination'
@@ -15,22 +16,43 @@ import { redirect } from 'next/navigation'
 
 export async function generateMetadata({ params }: { params: Promise<{ handle?: string[] }> }): Promise<Metadata> {
   const { handle } = await params
-  const category = await getStayCategoryByHandle(handle?.[0])
-  if (!category) {
+  const categoryData = await getCategoryBySlug(handle?.[0] || 'all')
+  if (!categoryData) {
     return {
       title: 'Collection not found',
       description: 'The collection you are looking for does not exist.',
     }
   }
-  const { name, description } = category
-  return { title: name, description }
+  const { name, description } = categoryData
+  return { title: name, description: description || '' }
 }
 
 const Page = async ({ params }: { params: Promise<{ handle?: string[] }> }) => {
   const { handle } = await params
 
-  const category = await getStayCategoryByHandle(handle?.[0])
-  const listings = await getStayListings()
+  let category: any = null
+  let listings: any[] = []
+
+  try {
+    const categoryData = await getCategoryBySlug(handle?.[0] || 'all')
+    category = categoryData ? transformCategory(categoryData) : null
+
+    if (categoryData) {
+      const listingsResponse = await getListings({
+        limit: 50,
+        category: categoryData.id
+      })
+      listings = transformListingsToStayListings(listingsResponse.docs)
+    }
+  } catch (error) {
+    console.error('Error fetching from Payload:', error)
+    // Fallback to mock data
+    const { getStayCategoryByHandle } = await import('@/data/categories')
+    const { getStayListings } = await import('@/data/listings')
+    category = await getStayCategoryByHandle(handle?.[0])
+    listings = await getStayListings()
+  }
+
   const filterOptions = await getStayListingFilterOptions()
 
   if (!category?.id) {

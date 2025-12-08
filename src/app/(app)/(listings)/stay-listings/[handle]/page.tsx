@@ -14,8 +14,8 @@ import {
   WaterPoloIcon,
   Wifi01Icon,
 } from '@/components/Icons'
-import { getListingReviews } from '@/data/data'
-import { getStayListingByHandle } from '@/data/listings'
+import { getListingBySlug, getReviewsForListing } from '@/lib/payload-api'
+import { transformListingToStayListing, transformReviews } from '@/lib/data-transformers'
 import ButtonPrimary from '@/shared/ButtonPrimary'
 import ButtonSecondary from '@/shared/ButtonSecondary'
 import { DescriptionDetails, DescriptionList, DescriptionTerm } from '@/shared/description-list'
@@ -38,7 +38,7 @@ import SectionMap from '../../components/SectionMap'
 
 export async function generateMetadata({ params }: { params: Promise<{ handle: string }> }): Promise<Metadata> {
   const { handle } = await params
-  const listing = await getStayListingByHandle(handle)
+  const listing = await getListingBySlug(handle)
 
   if (!listing) {
     return {
@@ -56,11 +56,33 @@ export async function generateMetadata({ params }: { params: Promise<{ handle: s
 const Page = async ({ params }: { params: Promise<{ handle: string }> }) => {
   const { handle } = await params
 
-  const listing = await getStayListingByHandle(handle)
+  let listing: any = null
+  let reviews: any[] = []
+
+  try {
+    const listingData = await getListingBySlug(handle)
+
+    if (!listingData?.id) {
+      // Try fallback
+      throw new Error('Listing not found in Payload')
+    }
+
+    listing = transformListingToStayListing(listingData)
+    const reviewsData = await getReviewsForListing(listingData.id)
+    reviews = reviewsData.slice(0, 3) // Fetching only the first 3 reviews for display
+  } catch (error) {
+    console.error('Error fetching from Payload:', error)
+    // Fallback to mock data
+    const { getStayListingByHandle } = await import('@/data/listings')
+    const { getListingReviews } = await import('@/data/data')
+    listing = await getStayListingByHandle(handle)
+    reviews = (await getListingReviews(handle)).slice(0, 3)
+  }
 
   if (!listing?.id) {
     return redirect('/stay-categories/all')
   }
+
   const {
     address,
     bathrooms,
@@ -82,7 +104,6 @@ const Page = async ({ params }: { params: Promise<{ handle: string }> }) => {
     host,
     beds,
   } = listing
-  const reviews = (await getListingReviews(handle)).slice(0, 3) // Fetching only the first 3 reviews for display
 
   // Server action to handle form submission
   const handleSubmitForm = async (formData: FormData) => {

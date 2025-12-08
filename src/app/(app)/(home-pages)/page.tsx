@@ -13,8 +13,8 @@ import SectionSliderNewCategories from '@/components/SectionSliderNewCategories'
 import SectionSubscribe2 from '@/components/SectionSubscribe2'
 import SectionVideos from '@/components/SectionVideos'
 import { getAuthors } from '@/data/authors'
-import { getStayCategories } from '@/data/categories'
-import { getStayListings } from '@/data/listings'
+import { getCategories, getListings } from '@/lib/payload-api'
+import { transformCategories, transformListingsToStayListings } from '@/lib/data-transformers'
 import heroImage from '@/images/hero-right.png'
 import ButtonPrimary from '@/shared/ButtonPrimary'
 import { Divider } from '@/shared/divider'
@@ -27,8 +27,30 @@ export const metadata: Metadata = {
 }
 
 async function Page() {
-  const categories = await getStayCategories()
-  const stayListings = await getStayListings()
+  // Fetch data from Payload CMS with fallbacks
+  let categories: any[] = []
+  let stayListings: any[] = []
+
+  try {
+    const categoriesData = await getCategories('stay-type')
+    categories = transformCategories(categoriesData)
+  } catch (error) {
+    console.error('Error fetching categories:', error)
+    // Fallback to mock data if Payload fails
+    const { getStayCategories } = await import('@/data/categories')
+    categories = await getStayCategories()
+  }
+
+  try {
+    const listingsResponse = await getListings({ limit: 20 })
+    stayListings = transformListingsToStayListings(listingsResponse.docs)
+  } catch (error) {
+    console.error('Error fetching listings:', error)
+    // Fallback to mock data if Payload fails
+    const { getStayListings: getMockListings } = await import('@/data/listings')
+    stayListings = await getMockListings()
+  }
+
   const authors = await getAuthors()
 
   return (
@@ -36,7 +58,7 @@ async function Page() {
       <BgGlassmorphism />
       <div className="relative container mb-24 flex flex-col gap-y-24 lg:mb-28 lg:gap-y-32">
         <HeroSectionWithSearchForm1
-          heading="Hotel, car, experiences"
+          heading="Find your next stay"
           image={heroImage}
           imageAlt="hero"
           searchForm={<HeroSearchForm initTab="Stays" />}

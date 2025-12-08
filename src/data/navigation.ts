@@ -6,16 +6,6 @@ export async function getNavigation(): Promise<TNavigationItem[]> {
       name: 'Stays',
     },
     {
-      id: '2',
-      href: '/real-estate',
-      name: 'Real Estate',
-    },
-    {
-      id: '4',
-      href: '/car',
-      name: 'Cars',
-    },
-    {
       id: '5',
       href: '/',
       name: 'Templates',
@@ -31,14 +21,6 @@ export async function getNavigation(): Promise<TNavigationItem[]> {
               href: '/',
               name: 'Stays',
             },
-            {
-              id: '1-2',
-              href: '/real-estate',
-              name: 'Real Estate',
-            },
-            { id: '1-3', href: '/experience', name: 'Experiences' },
-            { id: '1-4', href: '/car', name: 'Cars' },
-            { id: '1-5', href: '/flight-categories/all', name: 'Flights' },
             { id: '1-6', href: '/home-2', name: 'Home 2' },
           ],
         },
@@ -48,10 +30,6 @@ export async function getNavigation(): Promise<TNavigationItem[]> {
           name: 'Categories',
           children: [
             { id: '2-1', href: '/stay-categories/all', name: 'Stay Categories' },
-            { id: '2-4', href: '/car-categories/all', name: 'Car Categories' },
-            { id: '2-2', href: '/real-estate-categories/all', name: 'Real Estate ' },
-            { id: '2-3', href: '/experience-categories/all', name: 'Experiences ' },
-            { id: '2-5', href: '/flight-categories/all', name: 'Flight Categories' },
             { id: '2-6', href: '/stay-categories-map/all', name: 'Show Map' },
           ],
         },
@@ -61,9 +39,6 @@ export async function getNavigation(): Promise<TNavigationItem[]> {
           name: 'Listing Pages',
           children: [
             { id: '3-1', href: '/stay-listings/handle-123', name: 'Stay listing' },
-            { id: '3-2', href: '/car-listings/handle-123', name: 'Car listing' },
-            { id: '3-3', href: '/experience-listings/handle-123', name: 'Experience listing' },
-            { id: '3-4', href: '/real-estate-listings/handle-123', name: 'Real Estate' },
           ],
         },
         {
@@ -93,26 +68,6 @@ export async function getNavigation(): Promise<TNavigationItem[]> {
           id: '1',
           href: '/',
           name: 'Stays',
-        },
-        {
-          id: '2',
-          href: '/real-estate',
-          name: 'Real Estate',
-        },
-        {
-          id: '3',
-          href: '/experience',
-          name: 'Experiences',
-        },
-        {
-          id: '4',
-          href: '/car',
-          name: 'Cars',
-        },
-        {
-          id: '5',
-          href: '/flight-categories/all',
-          name: 'Flights',
         },
       ],
     },
