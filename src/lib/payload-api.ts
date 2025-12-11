@@ -1,11 +1,12 @@
 /**
- * Payload CMS REST API Client
+ * Payload CMS Local API Client
  *
- * This module provides utility functions to interact with Payload CMS REST API
+ * This module provides utility functions to interact with Payload CMS using the local API
  * for fetching listings, categories, hosts, reviews, and managing bookings.
  */
 
-const PAYLOAD_API_URL = process.env.NEXT_PUBLIC_PAYLOAD_URL || 'http://localhost:3000/api'
+import { getPayload } from 'payload'
+import config from '@payload-config'
 
 interface PayloadResponse<T> {
   docs: T[]
@@ -22,33 +23,20 @@ interface PayloadSingleResponse<T> {
 }
 
 /**
- * Generic fetch function for Payload API
+ * Get Payload instance with timeout
  */
-async function payloadFetch<T>(
-  endpoint: string,
-  options?: RequestInit
-): Promise<T> {
-  const url = `${PAYLOAD_API_URL}${endpoint}`
-
+async function getPayloadInstance() {
   try {
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...options?.headers,
-      },
-      cache: 'no-store', // Disable caching for development
-    })
+    // Add a timeout to prevent hanging
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Payload initialization timeout')), 5000)
+    )
 
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error(`Payload API error (${response.status}):`, errorText)
-      throw new Error(`Payload API error: ${response.statusText} - ${errorText}`)
-    }
+    const payloadPromise = getPayload({ config })
 
-    return response.json()
+    return await Promise.race([payloadPromise, timeoutPromise]) as any
   } catch (error) {
-    console.error('Error fetching from Payload:', error)
+    console.error('Error initializing Payload:', error)
     throw error
   }
 }
@@ -107,29 +95,39 @@ export async function getListings(params?: {
   guests?: number
   bedrooms?: number
 }): Promise<PayloadResponse<Listing>> {
-  const searchParams = new URLSearchParams()
+  const payload = await getPayloadInstance()
 
-  if (params?.limit) searchParams.set('limit', params.limit.toString())
-  if (params?.page) searchParams.set('page', params.page.toString())
-  if (params?.category) searchParams.set('where[listingCategory][equals]', params.category)
-  if (params?.minPrice) searchParams.set('where[price][greater_than_equal]', params.minPrice.toString())
-  if (params?.maxPrice) searchParams.set('where[price][less_than_equal]', params.maxPrice.toString())
-  if (params?.guests) searchParams.set('where[maxGuests][greater_than_equal]', params.guests.toString())
-  if (params?.bedrooms) searchParams.set('where[bedrooms][equals]', params.bedrooms.toString())
+  const where: any = {
+    isActive: { equals: true }
+  }
 
-  // Only show active listings
-  searchParams.set('where[isActive][equals]', 'true')
-  searchParams.set('depth', '2')
+  if (params?.category) where.listingCategory = { equals: params.category }
+  if (params?.minPrice) where.price = { ...where.price, greater_than_equal: params.minPrice }
+  if (params?.maxPrice) where.price = { ...where.price, less_than_equal: params.maxPrice }
+  if (params?.guests) where.maxGuests = { greater_than_equal: params.guests }
+  if (params?.bedrooms) where.bedrooms = { equals: params.bedrooms }
 
-  return payloadFetch<PayloadResponse<Listing>>(`/listings?${searchParams.toString()}`)
+  const result = await payload.find({
+    collection: 'listings',
+    where,
+    limit: params?.limit || 10,
+    page: params?.page || 1,
+    depth: 2,
+  })
+
+  return result as PayloadResponse<Listing>
 }
 
 export async function getListingBySlug(slug: string): Promise<Listing | null> {
   try {
-    const response = await payloadFetch<PayloadResponse<Listing>>(
-      `/listings?where[slug][equals]=${slug}&depth=2`
-    )
-    return response.docs[0] || null
+    const payload = await getPayloadInstance()
+    const response = await payload.find({
+      collection: 'listings',
+      where: { slug: { equals: slug } },
+      depth: 2,
+      limit: 1,
+    })
+    return (response.docs[0] as Listing) || null
   } catch (error) {
     console.error('Error fetching listing:', error)
     return null
@@ -138,7 +136,13 @@ export async function getListingBySlug(slug: string): Promise<Listing | null> {
 
 export async function getListingById(id: string): Promise<Listing | null> {
   try {
-    return await payloadFetch<Listing>(`/listings/${id}?depth=2`)
+    const payload = await getPayloadInstance()
+    const result = await payload.findByID({
+      collection: 'listings',
+      id,
+      depth: 2,
+    })
+    return result as Listing
   } catch (error) {
     console.error('Error fetching listing:', error)
     return null
@@ -162,26 +166,34 @@ export interface Category {
 }
 
 export async function getCategories(taxonomy?: string): Promise<Category[]> {
-  const searchParams = new URLSearchParams()
-  searchParams.set('where[isActive][equals]', 'true')
-  searchParams.set('limit', '100')
+  const payload = await getPayloadInstance()
 
-  if (taxonomy) {
-    searchParams.set('where[taxonomy][equals]', taxonomy)
+  const where: any = {
+    isActive: { equals: true }
   }
 
-  const response = await payloadFetch<PayloadResponse<Category>>(
-    `/categories?${searchParams.toString()}`
-  )
-  return response.docs
+  if (taxonomy) {
+    where.taxonomy = { equals: taxonomy }
+  }
+
+  const response = await payload.find({
+    collection: 'categories',
+    where,
+    limit: 100,
+  })
+
+  return response.docs as Category[]
 }
 
 export async function getCategoryBySlug(slug: string): Promise<Category | null> {
   try {
-    const response = await payloadFetch<PayloadResponse<Category>>(
-      `/categories?where[slug][equals]=${slug}`
-    )
-    return response.docs[0] || null
+    const payload = await getPayloadInstance()
+    const response = await payload.find({
+      collection: 'categories',
+      where: { slug: { equals: slug } },
+      limit: 1,
+    })
+    return (response.docs[0] as Category) || null
   } catch (error) {
     console.error('Error fetching category:', error)
     return null
@@ -210,18 +222,24 @@ export interface Host {
 }
 
 export async function getHosts(): Promise<Host[]> {
-  const response = await payloadFetch<PayloadResponse<Host>>(
-    '/hosts?where[isActive][equals]=true&limit=100'
-  )
-  return response.docs
+  const payload = await getPayloadInstance()
+  const response = await payload.find({
+    collection: 'hosts',
+    where: { isActive: { equals: true } },
+    limit: 100,
+  })
+  return response.docs as Host[]
 }
 
 export async function getHostByHandle(handle: string): Promise<Host | null> {
   try {
-    const response = await payloadFetch<PayloadResponse<Host>>(
-      `/hosts?where[handle][equals]=${handle}`
-    )
-    return response.docs[0] || null
+    const payload = await getPayloadInstance()
+    const response = await payload.find({
+      collection: 'hosts',
+      where: { handle: { equals: handle } },
+      limit: 1,
+    })
+    return (response.docs[0] as Host) || null
   } catch (error) {
     console.error('Error fetching host:', error)
     return null
@@ -243,18 +261,23 @@ export interface Amenity {
 }
 
 export async function getAmenities(category?: string): Promise<Amenity[]> {
-  const searchParams = new URLSearchParams()
-  searchParams.set('where[isActive][equals]', 'true')
-  searchParams.set('limit', '100')
+  const payload = await getPayloadInstance()
 
-  if (category) {
-    searchParams.set('where[category][equals]', category)
+  const where: any = {
+    isActive: { equals: true }
   }
 
-  const response = await payloadFetch<PayloadResponse<Amenity>>(
-    `/amenities?${searchParams.toString()}`
-  )
-  return response.docs
+  if (category) {
+    where.category = { equals: category }
+  }
+
+  const response = await payload.find({
+    collection: 'amenities',
+    where,
+    limit: 100,
+  })
+
+  return response.docs as Amenity[]
 }
 
 /**
@@ -289,17 +312,26 @@ export interface Review {
 }
 
 export async function getReviewsForListing(listingId: string): Promise<Review[]> {
-  const response = await payloadFetch<PayloadResponse<Review>>(
-    `/reviews?where[listing][equals]=${listingId}&where[isActive][equals]=true&limit=100&depth=1`
-  )
-  return response.docs
+  const payload = await getPayloadInstance()
+  const response = await payload.find({
+    collection: 'reviews',
+    where: {
+      listing: { equals: listingId },
+      isActive: { equals: true }
+    },
+    limit: 100,
+    depth: 1,
+  })
+  return response.docs as Review[]
 }
 
 export async function createReview(reviewData: Partial<Review>): Promise<Review> {
-  return payloadFetch<Review>('/reviews', {
-    method: 'POST',
-    body: JSON.stringify(reviewData),
+  const payload = await getPayloadInstance()
+  const result = await payload.create({
+    collection: 'reviews',
+    data: reviewData as any,
   })
+  return result as Review
 }
 
 /**
@@ -331,9 +363,16 @@ export async function checkAvailability(
   endDate: string
 ): Promise<boolean> {
   try {
-    const response = await payloadFetch<PayloadResponse<Availability>>(
-      `/availability?where[listing][equals]=${listingId}&where[dateRange.startDate][less_than_equal]=${endDate}&where[dateRange.endDate][greater_than_equal]=${startDate}&where[status][not_equals]=available`
-    )
+    const payload = await getPayloadInstance()
+    const response = await payload.find({
+      collection: 'availability',
+      where: {
+        listing: { equals: listingId },
+        'dateRange.startDate': { less_than_equal: endDate },
+        'dateRange.endDate': { greater_than_equal: startDate },
+        status: { not_equals: 'available' }
+      },
+    })
     // If there are any non-available periods, the listing is not available
     return response.docs.length === 0
   } catch (error) {
@@ -347,20 +386,25 @@ export async function getAvailabilityForListing(
   startDate?: string,
   endDate?: string
 ): Promise<Availability[]> {
-  const searchParams = new URLSearchParams()
-  searchParams.set('where[listing][equals]', listingId)
+  const payload = await getPayloadInstance()
+
+  const where: any = {
+    listing: { equals: listingId }
+  }
 
   if (startDate) {
-    searchParams.set('where[dateRange.endDate][greater_than_equal]', startDate)
+    where['dateRange.endDate'] = { greater_than_equal: startDate }
   }
   if (endDate) {
-    searchParams.set('where[dateRange.startDate][less_than_equal]', endDate)
+    where['dateRange.startDate'] = { less_than_equal: endDate }
   }
 
-  const response = await payloadFetch<PayloadResponse<Availability>>(
-    `/availability?${searchParams.toString()}`
-  )
-  return response.docs
+  const response = await payload.find({
+    collection: 'availability',
+    where,
+  })
+
+  return response.docs as Availability[]
 }
 
 /**
@@ -402,25 +446,34 @@ export interface Booking {
 }
 
 export async function createBooking(bookingData: Partial<Booking>): Promise<Booking> {
-  return payloadFetch<Booking>('/bookings', {
-    method: 'POST',
-    body: JSON.stringify(bookingData),
+  const payload = await getPayloadInstance()
+  const result = await payload.create({
+    collection: 'bookings',
+    data: bookingData as any,
   })
+  return result as Booking
 }
 
 export async function getBookingsForUser(userId: string): Promise<Booking[]> {
-  const response = await payloadFetch<PayloadResponse<Booking>>(
-    `/bookings?where[user][equals]=${userId}&depth=2`
-  )
-  return response.docs
+  const payload = await getPayloadInstance()
+  const response = await payload.find({
+    collection: 'bookings',
+    where: { user: { equals: userId } },
+    depth: 2,
+  })
+  return response.docs as Booking[]
 }
 
 export async function getBookingByNumber(bookingNumber: string): Promise<Booking | null> {
   try {
-    const response = await payloadFetch<PayloadResponse<Booking>>(
-      `/bookings?where[bookingNumber][equals]=${bookingNumber}&depth=2`
-    )
-    return response.docs[0] || null
+    const payload = await getPayloadInstance()
+    const response = await payload.find({
+      collection: 'bookings',
+      where: { bookingNumber: { equals: bookingNumber } },
+      depth: 2,
+      limit: 1,
+    })
+    return (response.docs[0] as Booking) || null
   } catch (error) {
     console.error('Error fetching booking:', error)
     return null
@@ -431,8 +484,11 @@ export async function updateBookingStatus(
   bookingId: string,
   status: Booking['status']
 ): Promise<Booking> {
-  return payloadFetch<Booking>(`/bookings/${bookingId}`, {
-    method: 'PATCH',
-    body: JSON.stringify({ status }),
+  const payload = await getPayloadInstance()
+  const result = await payload.update({
+    collection: 'bookings',
+    id: bookingId,
+    data: { status } as any,
   })
+  return result as Booking
 }

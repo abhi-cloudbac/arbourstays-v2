@@ -32,6 +32,16 @@ const nextConfig = {
       },
     ],
   },
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      // Mark date-fns as external to prevent webpack bundling issues
+      config.externals = config.externals || []
+      config.externals.push({
+        'date-fns': 'commonjs date-fns',
+      })
+    }
+    return config
+  },
 }
 
 export default withPayload(nextConfig)

@@ -1,0 +1,19 @@
+name = "arbourstays-template"
+compatibility_date = "2025-12-10"
+pages_build_output_dir = ".vercel/output/static"
+
+# Enable Node.js compatibility for PayloadCMS
+compatibility_flags = ["nodejs_compat"]
+
+# Environment variables
+# Add your secrets using: wrangler secret put <NAME>
+[vars]
+NODE_ENV = "production"
+
+# For local development, create a .dev.vars file with your environment variables
+# NEXT_PUBLIC_SERVER_URL=http://localhost:8788
+# NEXT_PUBLIC_PAYLOAD_URL=http://localhost:8788/api
+# NEXT_PUBLIC_GOOGLE_MAP_API_KEY=your_key
+# NEXT_PUBLIC_GOOGLE_MAP_ID=your_map_id
+# DATABASE_URI=your_neon_connection_string
+# PAYLOAD_SECRET=your_secret_key

@@ -52,6 +52,9 @@ export default buildConfig({
   db: postgresAdapter({
     pool: {
       connectionString: process.env.DATABASE_URI || '',
+      connectionTimeoutMillis: 5000,
+      idleTimeoutMillis: 10000,
+      max: 10,
     },
   }),
   cors: [

@@ -19,7 +19,7 @@ export function transformListingToStayListing(listing: Listing): TStayListing {
   const categoryData = typeof listing.listingCategory === 'object' ? listing.listingCategory : null
 
   // Handle featured image
-  const featuredImageUrl = typeof listing.featuredImage === 'object'
+  const featuredImageUrl = listing.featuredImage && typeof listing.featuredImage === 'object'
     ? listing.featuredImage.url
     : listing.featuredImage
 
@@ -44,7 +44,7 @@ export function transformListingToStayListing(listing: Listing): TStayListing {
     date: listing.date,
     listingCategory: categoryData?.name || 'Stay',
     title: listing.title,
-    handle: listing.handle,
+    handle: listing.handle || listing.slug || listing.id, // Fallback to slug or id if handle is missing
     description: listing.description ? JSON.stringify(listing.description) : '',
     featuredImage: featuredImageUrl || '',
     galleryImgs,
@@ -62,8 +62,8 @@ export function transformListingToStayListing(listing: Listing): TStayListing {
     map: listing.map,
     host: hostData ? {
       displayName: hostData.displayName,
-      handle: hostData.handle,
-      avatarUrl: typeof hostData.avatarUrl === 'object'
+      handle: hostData.handle || 'host', // Fallback for host handle
+      avatarUrl: hostData.avatarUrl && typeof hostData.avatarUrl === 'object'
         ? hostData.avatarUrl.url
         : hostData.avatarUrl || '',
     } : {
@@ -86,19 +86,28 @@ export function transformListingsToStayListings(listings: Listing[]): TStayListi
  * Transform Payload Category to frontend format
  */
 export function transformCategory(category: Category) {
-  const featuredImageUrl = typeof category.featuredImage === 'object'
+  const featuredImageUrl = category.featuredImage && typeof category.featuredImage === 'object'
     ? category.featuredImage.url
     : category.featuredImage
+
+  // Generate href based on taxonomy
+  const basePath = category.taxonomy === 'stay-type' ? '/stay-categories'
+    : category.taxonomy === 'experience-type' ? '/experience-categories'
+    : category.taxonomy === 'car-type' ? '/car-categories'
+    : category.taxonomy === 'real-estate-type' ? '/real-estate-categories'
+    : '/stay-categories' // default fallback
 
   return {
     id: category.id,
     name: category.name,
     slug: category.slug,
     handle: category.slug, // Using slug as handle
+    href: `${basePath}/${category.slug}`, // Add href for Link components
     taxonomy: category.taxonomy,
     description: category.description || '',
     icon: category.icon || '',
     coverImage: featuredImageUrl || '',
+    thumbnail: featuredImageUrl || '', // Add thumbnail property
     count: category.listingCount || 0,
     listingCount: category.listingCount,
     isActive: category.isActive,
@@ -118,7 +127,7 @@ export function transformCategories(categories: Category[]) {
  * Transform Payload Host to frontend format
  */
 export function transformHost(host: Host) {
-  const avatarUrl = typeof host.avatarUrl === 'object'
+  const avatarUrl = host.avatarUrl && typeof host.avatarUrl === 'object'
     ? host.avatarUrl.url
     : host.avatarUrl
 
