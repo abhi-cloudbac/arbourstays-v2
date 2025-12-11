@@ -1,5 +1,9 @@
+// Load environment variables FIRST before any other imports
+import dotenv from 'dotenv'
+dotenv.config()
+
+// Now import Payload (config will be imported dynamically)
 import { getPayload } from 'payload'
-import config from '../payload.config'
 
 const sampleCategories = [
   {
@@ -389,6 +393,8 @@ const sampleListings = [
 async function seed() {
   console.log('🌱 Starting seed process...')
 
+  // Dynamically import config after env vars are loaded
+  const { default: config } = await import('../payload.config.js')
   const payload = await getPayload({ config })
 
   try {
@@ -412,6 +418,10 @@ async function seed() {
     })
     await payload.delete({
       collection: 'categories',
+      where: {},
+    })
+    await payload.delete({
+      collection: 'media',
       where: {},
     })
 
@@ -463,6 +473,37 @@ async function seed() {
       console.log(`  ✅ Created host: ${created.displayName}`)
     }
 
+    // Create placeholder media for listings
+    console.log('📸 Creating placeholder images...')
+    const placeholderImages = [
+      { url: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1200&h=800&fit=crop', alt: 'Luxury beachfront villa' },
+      { url: 'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=1200&h=800&fit=crop', alt: 'Cozy mountain cabin' },
+      { url: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=1200&h=800&fit=crop', alt: 'Modern city apartment' },
+      { url: 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=1200&h=800&fit=crop', alt: 'Luxury villa with pool' },
+      { url: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=1200&h=800&fit=crop', alt: 'Countryside cottage' },
+      { url: 'https://images.unsplash.com/photo-1499696010180-025ef6e1a8f9?w=1200&h=800&fit=crop', alt: 'Lakehouse retreat' },
+    ]
+
+    const mediaItems = []
+    for (let i = 0; i < placeholderImages.length; i++) {
+      const imageData = placeholderImages[i]
+      const filename = `listing-${i + 1}.jpg`
+      const created = await payload.create({
+        collection: 'media',
+        data: {
+          alt: imageData.alt,
+          url: imageData.url,
+          filename,
+          mimeType: 'image/jpeg',
+          filesize: 0,
+          width: 1200,
+          height: 800,
+        },
+      })
+      mediaItems.push(created)
+      console.log(`  ✅ Created media item ${i + 1}: ${imageData.alt}`)
+    }
+
     // Seed Listings
     console.log('🏠 Seeding listings...')
     const categoryMapping = [
@@ -505,6 +546,7 @@ async function seed() {
           location: location.id,
           host: arbourStaysHost.id,
           amenities: selectedAmenities,
+          featuredImage: mediaItems[i].id,
         },
       })
       console.log(`  ✅ Created listing: ${created.title}`)
