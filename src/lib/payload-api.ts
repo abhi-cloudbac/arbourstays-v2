@@ -58,6 +58,12 @@ export interface Listing {
     handle: string
     avatarUrl: string
   }
+  location?: string | {
+    id: string
+    name: string
+    slug: string
+    country: string
+  }
   featuredImage: string | { url: string; alt?: string }
   galleryImgs: Array<{ image: string | { url: string; alt?: string } }>
   price: number
@@ -90,6 +96,7 @@ export async function getListings(params?: {
   limit?: number
   page?: number
   category?: string
+  location?: string
   minPrice?: number
   maxPrice?: number
   guests?: number
@@ -102,6 +109,7 @@ export async function getListings(params?: {
   }
 
   if (params?.category) where.listingCategory = { equals: params.category }
+  if (params?.location) where.location = { equals: params.location }
   if (params?.minPrice) where.price = { ...where.price, greater_than_equal: params.minPrice }
   if (params?.maxPrice) where.price = { ...where.price, less_than_equal: params.maxPrice }
   if (params?.guests) where.maxGuests = { greater_than_equal: params.guests }
@@ -124,6 +132,22 @@ export async function getListingBySlug(slug: string): Promise<Listing | null> {
     const response = await payload.find({
       collection: 'listings',
       where: { slug: { equals: slug } },
+      depth: 2,
+      limit: 1,
+    })
+    return (response.docs[0] as Listing) || null
+  } catch (error) {
+    console.error('Error fetching listing:', error)
+    return null
+  }
+}
+
+export async function getListingByHandle(handle: string): Promise<Listing | null> {
+  try {
+    const payload = await getPayloadInstance()
+    const response = await payload.find({
+      collection: 'listings',
+      where: { handle: { equals: handle } },
       depth: 2,
       limit: 1,
     })
@@ -196,6 +220,64 @@ export async function getCategoryBySlug(slug: string): Promise<Category | null> 
     return (response.docs[0] as Category) || null
   } catch (error) {
     console.error('Error fetching category:', error)
+    return null
+  }
+}
+
+/**
+ * LOCATIONS
+ */
+
+export interface Location {
+  id: string
+  name: string
+  slug: string
+  country: string
+  region?: string
+  coordinates: { lat: number; lng: number }
+  featuredImage?: string | { url: string; alt?: string }
+  description?: string
+  listingCount: number
+  isFeatured: boolean
+  displayOrder: number
+  isActive: boolean
+}
+
+export async function getLocations(params?: {
+  featured?: boolean
+  limit?: number
+}): Promise<Location[]> {
+  const payload = await getPayloadInstance()
+
+  const where: any = {
+    isActive: { equals: true }
+  }
+
+  if (params?.featured) {
+    where.isFeatured = { equals: true }
+  }
+
+  const response = await payload.find({
+    collection: 'locations',
+    where,
+    limit: params?.limit || 100,
+    sort: 'displayOrder',
+  })
+
+  return response.docs as Location[]
+}
+
+export async function getLocationBySlug(slug: string): Promise<Location | null> {
+  try {
+    const payload = await getPayloadInstance()
+    const response = await payload.find({
+      collection: 'locations',
+      where: { slug: { equals: slug } },
+      limit: 1,
+    })
+    return (response.docs[0] as Location) || null
+  } catch (error) {
+    console.error('Error fetching location:', error)
     return null
   }
 }

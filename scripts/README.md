@@ -6,9 +6,10 @@ This directory contains scripts to populate your Payload CMS database with sampl
 
 The `seed.ts` script populates your database with:
 - **6 Categories** (Beach House, Mountain Cabin, City Apartment, Villa, Countryside, Lakehouse)
+- **6 Locations** (New York, Tokyo, Paris, London, Barcelona, Sydney)
 - **12 Amenities** (WiFi, Pool, Kitchen, AC, Parking, TV, etc.)
 - **1 Host** (ArbourStays - the main host for all listings)
-- **6 Sample Listings** (One for each category, all managed by ArbourStays)
+- **6 Sample Listings** (One for each category and location, all managed by ArbourStays)
 
 ## Usage
 
@@ -20,17 +21,19 @@ npm run seed
 
 ### What it does:
 
-1. **Clears existing data** - Removes all existing listings, hosts, amenities, and categories
+1. **Clears existing data** - Removes all existing listings, locations, hosts, amenities, and categories
 2. **Creates categories** - Adds 6 stay-type categories
-3. **Creates amenities** - Adds 12 common amenities
-4. **Creates host** - Adds the ArbourStays host profile
-5. **Creates listings** - Adds 6 sample listings, all managed by ArbourStays
-6. **Updates counts** - Updates listing counts for categories and hosts
+3. **Creates locations** - Adds 6 featured locations (cities)
+4. **Creates amenities** - Adds 12 common amenities
+5. **Creates host** - Adds the ArbourStays host profile
+6. **Creates listings** - Adds 6 sample listings, each assigned to a different location, all managed by ArbourStays
+7. **Updates counts** - Updates listing counts for categories, locations, and hosts
 
 ### Important Notes:
 
 - ⚠️ This script will **DELETE ALL EXISTING DATA** in the following collections:
   - listings
+  - locations
   - hosts
   - amenities
   - categories
@@ -43,12 +46,15 @@ npm run seed
 
 - The script uses Lexical rich text format for listing descriptions
 - Sample data includes realistic addresses, coordinates, prices, and ratings
-- Each listing is assigned random amenities from the seeded amenities
+- Each listing is assigned to a specific location (New York, Tokyo, Paris, etc.)
+- Each listing is assigned 4-8 random amenities from the seeded amenities
+- Locations are marked as "featured" to appear in home page filter tabs
 
 ## Customizing the Seed Data
 
 To customize the sample data, edit the following arrays in `seed.ts`:
 - `sampleCategories` - Add/modify category types
+- `sampleLocations` - Add/modify locations (cities/destinations)
 - `sampleAmenities` - Add/modify amenities
 - `sampleHosts` - Modify the ArbourStays host profile (currently only 1 host)
 - `sampleListings` - Add/modify listings

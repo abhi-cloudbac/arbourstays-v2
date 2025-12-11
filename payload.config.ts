@@ -13,6 +13,7 @@ import { Amenities } from './collections/Amenities'
 import { Reviews } from './collections/Reviews'
 import { Bookings } from './collections/Bookings'
 import { Availability } from './collections/Availability'
+import { Locations } from './collections/Locations'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -38,6 +39,7 @@ export default buildConfig({
     Media,
     Listings,
     Categories,
+    Locations,
     Hosts,
     Amenities,
     Reviews,

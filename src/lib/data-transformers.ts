@@ -5,7 +5,7 @@
  * This bridges the gap between Payload's data structure and the existing component interfaces.
  */
 
-import type { Listing, Category, Host, Review, Amenity } from './payload-api'
+import type { Listing, Category, Host, Review, Amenity, Location } from './payload-api'
 import type { TStayListing } from '@/data/types'
 
 /**
@@ -17,6 +17,9 @@ export function transformListingToStayListing(listing: Listing): TStayListing {
 
   // Handle category data
   const categoryData = typeof listing.listingCategory === 'object' ? listing.listingCategory : null
+
+  // Handle location data
+  const locationData = typeof listing.location === 'object' ? listing.location : null
 
   // Handle featured image
   const featuredImageUrl = listing.featuredImage && typeof listing.featuredImage === 'object'
@@ -41,6 +44,9 @@ export function transformListingToStayListing(listing: Listing): TStayListing {
 
   return {
     id: listing.id,
+    locationId: locationData?.id || '',
+    locationName: locationData?.name || '',
+    locationSlug: locationData?.slug || '',
     date: listing.date,
     listingCategory: categoryData?.name || 'Stay',
     title: listing.title,
@@ -121,6 +127,37 @@ export function transformCategory(category: Category) {
  */
 export function transformCategories(categories: Category[]) {
   return categories.map(transformCategory)
+}
+
+/**
+ * Transform Payload Location to frontend format
+ */
+export function transformLocation(location: Location) {
+  const featuredImageUrl = location.featuredImage && typeof location.featuredImage === 'object'
+    ? location.featuredImage.url
+    : location.featuredImage
+
+  return {
+    id: location.id,
+    name: location.name,
+    slug: location.slug,
+    country: location.country,
+    region: location.region || '',
+    coordinates: location.coordinates,
+    featuredImage: featuredImageUrl || '',
+    description: location.description || '',
+    listingCount: location.listingCount || 0,
+    isFeatured: location.isFeatured,
+    displayOrder: location.displayOrder,
+    isActive: location.isActive,
+  }
+}
+
+/**
+ * Transform array of Payload Locations
+ */
+export function transformLocations(locations: Location[]) {
+  return locations.map(transformLocation)
 }
 
 /**

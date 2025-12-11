@@ -25,6 +25,9 @@ export async function getStayListings() {
     {
       id: 'stay-listing://1',
       date: 'May 20, 2021',
+      locationId: 'location://1',
+      locationName: 'New York',
+      locationSlug: 'new-york',
       listingCategory: 'Entire cabin',
       title: 'Best Western Cedars Hotel',
       handle: 'best-western-cedars-hotel',

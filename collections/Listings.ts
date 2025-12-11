@@ -58,6 +58,16 @@ export const Listings: CollectionConfig = {
       required: true,
       label: 'Host',
     },
+    {
+      name: 'location',
+      type: 'relationship',
+      relationTo: 'locations',
+      required: false,
+      label: 'Location/City',
+      admin: {
+        description: 'The city or location where this property is located',
+      },
+    },
 
     // Images
     {

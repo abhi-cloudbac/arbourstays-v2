@@ -13,8 +13,8 @@ import SectionSliderNewCategories from '@/components/SectionSliderNewCategories'
 import SectionSubscribe2 from '@/components/SectionSubscribe2'
 import SectionVideos from '@/components/SectionVideos'
 import { getAuthors } from '@/data/authors'
-import { getCategories, getListings } from '@/lib/payload-api'
-import { transformCategories, transformListingsToStayListings } from '@/lib/data-transformers'
+import { getCategories, getListings, getLocations } from '@/lib/payload-api'
+import { transformCategories, transformListingsToStayListings, transformLocations } from '@/lib/data-transformers'
 import heroImage from '@/images/hero-right.png'
 import ButtonPrimary from '@/shared/ButtonPrimary'
 import { Divider } from '@/shared/divider'
@@ -30,6 +30,7 @@ async function Page() {
   // Fetch data from Payload CMS with fallbacks
   let categories: any[] = []
   let stayListings: any[] = []
+  let locations: any[] = []
 
   try {
     const categoriesData = await getCategories('stay-type')
@@ -39,6 +40,15 @@ async function Page() {
     // Fallback to mock data if Payload fails
     const { getStayCategories } = await import('@/data/categories')
     categories = await getStayCategories()
+  }
+
+  try {
+    const locationsData = await getLocations({ featured: true })
+    locations = transformLocations(locationsData)
+  } catch (error) {
+    console.error('Error fetching locations:', error)
+    // No fallback for locations - will use empty array
+    locations = []
   }
 
   try {
@@ -82,7 +92,7 @@ async function Page() {
         </div>
 
         <SectionOurFeatures className="py-14" />
-        <SectionGridFeaturePlaces stayListings={stayListings} cardType="card2" />
+        <SectionGridFeaturePlaces stayListings={stayListings} locations={locations} cardType="card2" />
         <Divider />
         <SectionHowItWork />
         <div className="relative py-20">

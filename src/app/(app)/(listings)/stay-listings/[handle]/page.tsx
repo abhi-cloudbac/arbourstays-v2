@@ -14,7 +14,7 @@ import {
   WaterPoloIcon,
   Wifi01Icon,
 } from '@/components/Icons'
-import { getListingBySlug, getReviewsForListing } from '@/lib/payload-api'
+import { getListingByHandle, getReviewsForListing } from '@/lib/payload-api'
 import { transformListingToStayListing, transformReviews } from '@/lib/data-transformers'
 import ButtonPrimary from '@/shared/ButtonPrimary'
 import ButtonSecondary from '@/shared/ButtonSecondary'
@@ -38,7 +38,7 @@ import SectionMap from '../../components/SectionMap'
 
 export async function generateMetadata({ params }: { params: Promise<{ handle: string }> }): Promise<Metadata> {
   const { handle } = await params
-  const listing = await getListingBySlug(handle)
+  const listing = await getListingByHandle(handle)
 
   if (!listing) {
     return {
@@ -60,7 +60,7 @@ const Page = async ({ params }: { params: Promise<{ handle: string }> }) => {
   let reviews: any[] = []
 
   try {
-    const listingData = await getListingBySlug(handle)
+    const listingData = await getListingByHandle(handle)
 
     if (!listingData?.id) {
       // Try fallback

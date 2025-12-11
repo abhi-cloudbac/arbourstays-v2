@@ -91,6 +91,81 @@ const sampleHosts = [
   },
 ]
 
+const sampleLocations = [
+  {
+    name: 'New York',
+    slug: 'new-york',
+    country: 'United States',
+    region: 'North America',
+    coordinates: { lat: 40.7128, lng: -74.0060 },
+    description: 'The city that never sleeps - experience world-class dining, entertainment, and iconic landmarks.',
+    listingCount: 0,
+    isFeatured: true,
+    displayOrder: 1,
+    isActive: true,
+  },
+  {
+    name: 'Tokyo',
+    slug: 'tokyo',
+    country: 'Japan',
+    region: 'Asia',
+    coordinates: { lat: 35.6762, lng: 139.6503 },
+    description: 'A fascinating blend of ancient tradition and cutting-edge technology in Japan\'s vibrant capital.',
+    listingCount: 0,
+    isFeatured: true,
+    displayOrder: 2,
+    isActive: true,
+  },
+  {
+    name: 'Paris',
+    slug: 'paris',
+    country: 'France',
+    region: 'Europe',
+    coordinates: { lat: 48.8566, lng: 2.3522 },
+    description: 'The City of Light - romance, art, fashion, and incredible cuisine await you.',
+    listingCount: 0,
+    isFeatured: true,
+    displayOrder: 3,
+    isActive: true,
+  },
+  {
+    name: 'London',
+    slug: 'london',
+    country: 'United Kingdom',
+    region: 'Europe',
+    coordinates: { lat: 51.5074, lng: -0.1278 },
+    description: 'Historic landmarks, world-class museums, and a diverse cultural scene in the heart of England.',
+    listingCount: 0,
+    isFeatured: true,
+    displayOrder: 4,
+    isActive: true,
+  },
+  {
+    name: 'Barcelona',
+    slug: 'barcelona',
+    country: 'Spain',
+    region: 'Europe',
+    coordinates: { lat: 41.3851, lng: 2.1734 },
+    description: 'Stunning architecture, beautiful beaches, and vibrant Mediterranean culture.',
+    listingCount: 0,
+    isFeatured: true,
+    displayOrder: 5,
+    isActive: true,
+  },
+  {
+    name: 'Sydney',
+    slug: 'sydney',
+    country: 'Australia',
+    region: 'Oceania',
+    coordinates: { lat: -33.8688, lng: 151.2093 },
+    description: 'Harbor views, pristine beaches, and a laid-back lifestyle in Australia\'s largest city.',
+    listingCount: 0,
+    isFeatured: true,
+    displayOrder: 6,
+    isActive: true,
+  },
+]
+
 const sampleListings = [
   {
     title: 'Stunning Beachfront Villa with Ocean Views',
@@ -318,6 +393,10 @@ async function seed() {
       where: {},
     })
     await payload.delete({
+      collection: 'locations',
+      where: {},
+    })
+    await payload.delete({
       collection: 'hosts',
       where: {},
     })
@@ -340,6 +419,18 @@ async function seed() {
       })
       categories.push(created)
       console.log(`  ✅ Created category: ${created.name}`)
+    }
+
+    // Seed Locations
+    console.log('📍 Seeding locations...')
+    const locations = []
+    for (const location of sampleLocations) {
+      const created = await payload.create({
+        collection: 'locations',
+        data: location,
+      })
+      locations.push(created)
+      console.log(`  ✅ Created location: ${created.name}`)
     }
 
     // Seed Amenities
@@ -377,12 +468,22 @@ async function seed() {
       categories[5], // Lakehouse
     ]
 
+    const locationMapping = [
+      locations[0], // New York
+      locations[1], // Tokyo
+      locations[2], // Paris
+      locations[3], // London
+      locations[4], // Barcelona
+      locations[5], // Sydney
+    ]
+
     // Use the single ArbourStays host for all listings
     const arbourStaysHost = hosts[0]
 
     for (let i = 0; i < sampleListings.length; i++) {
       const listing = sampleListings[i]
       const category = categoryMapping[i]
+      const location = locationMapping[i]
 
       // Select random amenities for each listing
       const selectedAmenities = amenities
@@ -395,6 +496,7 @@ async function seed() {
         data: {
           ...listing,
           listingCategory: category.id,
+          location: location.id,
           host: arbourStaysHost.id,
           amenities: selectedAmenities,
         },
@@ -442,10 +544,31 @@ async function seed() {
       })
     }
 
+    // Update location listing counts
+    console.log('🔄 Updating location counts...')
+    for (const location of locations) {
+      const listings = await payload.find({
+        collection: 'listings',
+        where: {
+          location: {
+            equals: location.id,
+          },
+        },
+      })
+      await payload.update({
+        collection: 'locations',
+        id: location.id,
+        data: {
+          listingCount: listings.docs.length,
+        },
+      })
+    }
+
     console.log('✨ Seed completed successfully!')
     console.log(`
 📊 Summary:
    - ${categories.length} categories created
+   - ${locations.length} locations created
    - ${amenities.length} amenities created
    - 1 host created (ArbourStays)
    - ${sampleListings.length} listings created
