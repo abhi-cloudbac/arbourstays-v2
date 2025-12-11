@@ -16,7 +16,17 @@ import { redirect } from 'next/navigation'
 
 export async function generateMetadata({ params }: { params: Promise<{ handle?: string[] }> }): Promise<Metadata> {
   const { handle } = await params
-  const categoryData = await getCategoryBySlug(handle?.[0] || 'all')
+  const categorySlug = handle?.[0] || 'all'
+
+  // Handle "all" case
+  if (categorySlug === 'all') {
+    return {
+      title: 'All Stays',
+      description: 'Browse all available stays',
+    }
+  }
+
+  const categoryData = await getCategoryBySlug(categorySlug)
   if (!categoryData) {
     return {
       title: 'Collection not found',
@@ -29,15 +39,50 @@ export async function generateMetadata({ params }: { params: Promise<{ handle?: 
 
 const Page = async ({ params }: { params: Promise<{ handle?: string[] }> }) => {
   const { handle } = await params
+  const categorySlug = handle?.[0] || 'all'
 
   let category: any = null
   let listings: any[] = []
 
   try {
-    const categoryData = await getCategoryBySlug(handle?.[0] || 'all')
-    category = categoryData ? transformCategory(categoryData) : null
+    // Handle "all" case - show all listings without filtering by category
+    if (categorySlug === 'all') {
+      // Create a virtual "all" category
+      category = {
+        id: 'all',
+        name: 'All Stays',
+        slug: 'all',
+        handle: 'all',
+        href: '/stay-categories/all',
+        taxonomy: 'stay-type',
+        description: 'Browse all available stays',
+        icon: '',
+        coverImage: '',
+        thumbnail: '',
+        count: 0,
+        listingCount: 0,
+        isActive: true,
+        region: 'Worldwide',
+      }
 
-    if (categoryData) {
+      // Fetch all listings without category filter
+      const listingsResponse = await getListings({
+        limit: 50,
+      })
+      listings = transformListingsToStayListings(listingsResponse.docs)
+      category.count = listingsResponse.totalDocs
+      category.listingCount = listingsResponse.totalDocs
+    } else {
+      // Fetch specific category
+      const categoryData = await getCategoryBySlug(categorySlug)
+
+      if (!categoryData) {
+        // Category not found, redirect to all
+        return redirect('/stay-categories/all')
+      }
+
+      category = transformCategory(categoryData)
+
       const listingsResponse = await getListings({
         limit: 50,
         category: categoryData.id
@@ -49,15 +94,11 @@ const Page = async ({ params }: { params: Promise<{ handle?: string[] }> }) => {
     // Fallback to mock data
     const { getStayCategoryByHandle } = await import('@/data/categories')
     const { getStayListings } = await import('@/data/listings')
-    category = await getStayCategoryByHandle(handle?.[0])
+    category = await getStayCategoryByHandle(categorySlug)
     listings = await getStayListings()
   }
 
   const filterOptions = await getStayListingFilterOptions()
-
-  if (!category?.id) {
-    return redirect('/stay-categories/all')
-  }
 
   return (
     <div className="pb-28">

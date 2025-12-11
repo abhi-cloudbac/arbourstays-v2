@@ -19,7 +19,15 @@ const CardCategoryBox1: FC<CardCategoryBox1Props> = ({ className = '', category 
       </Badge>
 
       <div className="relative size-24 shrink-0 overflow-hidden rounded-full">
-        <Image src={thumbnail || ''} fill alt={name} sizes="(max-width: 400px) 100vw, 400px" />
+        {thumbnail ? (
+          <Image src={thumbnail} fill alt={name} sizes="(max-width: 400px) 100vw, 400px" />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-neutral-200 dark:bg-neutral-700">
+            <span className="text-2xl font-semibold text-neutral-400 dark:text-neutral-500">
+              {name.charAt(0).toUpperCase()}
+            </span>
+          </div>
+        )}
       </div>
       <div className="ms-4 grow overflow-hidden">
         <h2 className="text-base font-medium">

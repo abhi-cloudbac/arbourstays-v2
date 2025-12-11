@@ -76,6 +76,7 @@ export default function GallerySlider({
   })
 
   let currentImage = images[index]
+  const imageSrc = typeof currentImage === 'string' ? currentImage : currentImage?.src
 
   return (
     <MotionConfig
@@ -98,14 +99,20 @@ export default function GallerySlider({
                 exit="exit"
                 className="absolute inset-0"
               >
-                <Image
-                  src={currentImage || ''}
-                  fill
-                  alt="listing card gallery"
-                  className={clsx(`rounded-xl object-cover`, imageClass)}
-                  onLoad={() => setLoaded(true)}
-                  sizes="(max-width: 1025px) 100vw, 25vw"
-                />
+                {imageSrc ? (
+                  <Image
+                    src={imageSrc}
+                    fill
+                    alt="listing card gallery"
+                    className={clsx(`rounded-xl object-cover`, imageClass)}
+                    onLoad={() => setLoaded(true)}
+                    sizes="(max-width: 1025px) 100vw, 25vw"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center bg-neutral-200 dark:bg-neutral-700">
+                    <span className="text-neutral-400 dark:text-neutral-500">No image</span>
+                  </div>
+                )}
               </motion.div>
             </AnimatePresence>
           </Link>
