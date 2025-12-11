@@ -7,6 +7,7 @@
 
 import type { Listing, Category, Host, Review, Amenity, Location } from './payload-api'
 import type { TStayListing } from '@/data/types'
+import { formatPrice as formatCurrencyPrice } from '@/utils/currency'
 
 /**
  * Transform Payload Listing to frontend TStayListing format
@@ -58,7 +59,7 @@ export function transformListingToStayListing(listing: Listing): TStayListing {
     address: listing.address,
     reviewStart: listing.reviewStart || 0,
     reviewCount: listing.reviewCount || 0,
-    price: `$${listing.price}`,
+    price: formatCurrencyPrice(listing.price, listing.currency),
     maxGuests: listing.maxGuests,
     bedrooms: listing.bedrooms,
     bathrooms: listing.bathrooms,
@@ -248,16 +249,6 @@ export function getMediaUrl(media: string | { url: string; alt?: string } | unde
   if (!media) return ''
   if (typeof media === 'string') return media
   return media.url
-}
-
-/**
- * Format price for display
- */
-export function formatPrice(price: number, currency: string = 'USD'): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency,
-  }).format(price)
 }
 
 /**

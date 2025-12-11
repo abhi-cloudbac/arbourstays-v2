@@ -67,6 +67,7 @@ export interface Listing {
   featuredImage: string | { url: string; alt?: string }
   galleryImgs: Array<{ image: string | { url: string; alt?: string } }>
   price: number
+  currency: string
   saleOff?: string
   address: string
   map: { lat: number; lng: number }

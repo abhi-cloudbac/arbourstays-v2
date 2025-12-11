@@ -6,7 +6,7 @@ This directory contains scripts to populate your Payload CMS database with sampl
 
 The `seed.ts` script populates your database with:
 - **6 Categories** (Beach House, Mountain Cabin, City Apartment, Villa, Countryside, Lakehouse)
-- **6 Locations** (New York, Tokyo, Paris, London, Barcelona, Sydney)
+- **6 Locations** (New Delhi, Jawai (Rajasthan), Jaipur, Pushkar, Ajmer, Ladakh)
 - **12 Amenities** (WiFi, Pool, Kitchen, AC, Parking, TV, etc.)
 - **1 Host** (ArbourStays - the main host for all listings)
 - **6 Sample Listings** (One for each category and location, all managed by ArbourStays)
@@ -46,7 +46,7 @@ npm run seed
 
 - The script uses Lexical rich text format for listing descriptions
 - Sample data includes realistic addresses, coordinates, prices, and ratings
-- Each listing is assigned to a specific location (New York, Tokyo, Paris, etc.)
+- Each listing is assigned to a specific location (New Delhi, Jawai, Jaipur, Pushkar, Ajmer, Ladakh)
 - Each listing is assigned 4-8 random amenities from the seeded amenities
 - Locations are marked as "featured" to appear in home page filter tabs
 

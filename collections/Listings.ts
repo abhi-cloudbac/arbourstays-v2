@@ -98,6 +98,26 @@ export const Listings: CollectionConfig = {
       label: 'Price per Night',
     },
     {
+      name: 'currency',
+      type: 'select',
+      required: true,
+      defaultValue: 'INR',
+      options: [
+        { label: 'Indian Rupee (₹)', value: 'INR' },
+        { label: 'US Dollar ($)', value: 'USD' },
+        { label: 'Euro (€)', value: 'EUR' },
+        { label: 'British Pound (£)', value: 'GBP' },
+        { label: 'Australian Dollar (A$)', value: 'AUD' },
+        { label: 'Canadian Dollar (C$)', value: 'CAD' },
+        { label: 'Japanese Yen (¥)', value: 'JPY' },
+        { label: 'Swiss Franc (CHF)', value: 'CHF' },
+      ],
+      label: 'Currency',
+      admin: {
+        description: 'Currency for the listing price',
+      },
+    },
+    {
       name: 'saleOff',
       type: 'text',
       label: 'Sale/Discount',
